@@ -128,6 +128,11 @@ describe("Multiplier3 with Groth16", function () {
 
     it("Should return false for invalid proof", async function () {
         //[assignment] insert your script here
+        let a = [0, 0];
+        let b = [[0, 0], [0, 0]];
+        let c = [0, 0];
+        let d = [0]
+        expect(await verifier.verifyProof(a, b, c, d)).to.be.false;
     });
 });
 
