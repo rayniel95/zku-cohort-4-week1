@@ -141,16 +141,49 @@ describe("Multiplier3 with Groth16", function () {
 
 
 describe("Multiplier3 with PLONK", function () {
-
+    this.timeout(100000000);
+    let Verifier;
+    let verifier;
     beforeEach(async function () {
         //[assignment] insert your script here
+        //NOTE - deploy the verifier in a local blockchain
+        Verifier = await ethers.getContractFactory("Multiplier3Verifier_plonk");
+        verifier = await Verifier.deploy();
+        await verifier.deployed();
     });
 
     it("Should return true for correct proof", async function () {
         //[assignment] insert your script here
+        //NOTE - calcualte the witness and generate the proof
+        const { proof, publicSignals } = await plonk.fullProve(
+            {
+                "a": "2", "b": "3", "c": "4"
+            },
+            "contracts/circuits/Multiplier3_plonk/Multiplier3_plonk_js/Multiplier3_plonk.wasm",
+            "contracts/circuits/Multiplier3_plonk/circuit_0000.zkey"
+        );
+
+        console.log('2x3x4 =', publicSignals[0]);
+        //NOTE - using the proof and the public signals a calldata to send to de
+        // verifier smart contract is created
+        const calldata = await plonk.exportSolidityCallData(proof, publicSignals);
+        console.log(calldata);
+        //NOTE - transform the calldata from a string to js types to send to the sc
+        let Input = calldata.split("][")[1].replace(/["[\]\s]/g, "")
+        Input = [BigInt(Input).toString()];
+
+        let a = calldata.split("][")[0].replace(/["[\]\s]/g, "").split(",").map(x => BigInt(x).toString());
+        
+        expect(await verifier.verifyProof(a, Input)).to.be.true;
     });
 
     it("Should return false for invalid proof", async function () {
         //[assignment] insert your script here
+        let a = [];
+        for (let index = 0; index < 24; index++) {
+            a.push(0);
+        }
+        let Input = [0]
+        expect(await verifier.verifyProof(a, Input)).to.be.false;
     });
 });
