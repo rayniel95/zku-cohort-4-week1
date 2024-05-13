@@ -1,7 +1,7 @@
 const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 // load snarkjs
-const { groth16 } = require("snarkjs");
+const { groth16, plonk } = require("snarkjs");
 // load a tool that allow to execute some methods in a circom circuit
 const wasm_tester = require("circom_tester").wasm;
 // NOTE - i have'nt idea
@@ -50,7 +50,7 @@ describe("HelloWorld", function () {
         //NOTE - using the proof and the public signals a calldata to send to de
         // verifier smart contract is created
         const calldata = await groth16.exportSolidityCallData(proof, publicSignals);
-        //NOTE - this seem to fixed some type errors
+        //NOTE - transform the calldata from a string to js types to send to the sc
         const argv = calldata.replace(/["[\]\s]/g, "").split(',').map(x => BigInt(x).toString());
 
         const a = [argv[0], argv[1]];
@@ -71,7 +71,9 @@ describe("HelloWorld", function () {
 
 
 describe("Multiplier3 with Groth16", function () {
-
+    this.timeout(100000000);
+    let Verifier;
+    let verifier;
     beforeEach(async function () {
         //[assignment] insert your script here
         //NOTE - deploy the verifier in a local blockchain
@@ -104,10 +106,10 @@ describe("Multiplier3 with Groth16", function () {
         //[assignment] insert your script here
         //NOTE - calcualte the witness and generate the proof
         const { proof, publicSignals } = await groth16.fullProve(
-            { 
+            {
                 "a": "2", "b": "3", "c": "4"
-            }, 
-            "contracts/circuits/Multiplier3/Multiplier3_js/Multiplier3.wasm", 
+            },
+            "contracts/circuits/Multiplier3/Multiplier3_js/Multiplier3.wasm",
             "contracts/circuits/Multiplier3/circuit_final.zkey"
         );
 
@@ -115,9 +117,10 @@ describe("Multiplier3 with Groth16", function () {
         //NOTE - using the proof and the public signals a calldata to send to de
         // verifier smart contract is created
         const calldata = await groth16.exportSolidityCallData(proof, publicSignals);
-        //NOTE - this seem to fixed some type errors
+        // console.log(calldata);
+        //NOTE - transform the calldata from a string to js types to send to the sc
         const argv = calldata.replace(/["[\]\s]/g, "").split(',').map(x => BigInt(x).toString());
-        console.log(argv);
+        // console.log(argv);
         const a = [argv[0], argv[1]];
         const b = [[argv[2], argv[3]], [argv[4], argv[5]]];
         const c = [argv[6], argv[7]];
